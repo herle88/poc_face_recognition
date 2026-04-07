@@ -1,4 +1,3 @@
-ARG BUILD_FROM=ghcr.io/home-assistant/amd64-base-debian:bookworm
 # ---------- Stage 1: build frontend ----------
 FROM node:20-alpine AS frontend-build
 WORKDIR /build
@@ -8,15 +7,12 @@ COPY frontend/ .
 RUN npm run build
 
 # ---------- Stage 2: runtime ----------
-FROM ${BUILD_FROM}
+FROM python:3.11-slim-bookworm
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install Python 3.11 and system deps for OpenCV / DeepFace
+# Install system deps for OpenCV / DeepFace + bashio for HA integration
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 \
-    python3-pip \
-    python3-dev \
     build-essential \
     cmake \
     gfortran \
@@ -31,13 +27,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libwebp-dev \
     libhdf5-dev \
     curl \
+    jq \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
 # Install Python deps
 COPY backend/requirements.txt .
-RUN pip3 install --no-cache-dir --break-system-packages -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy backend code
 COPY backend/ .
@@ -47,7 +44,6 @@ COPY --from=frontend-build /build/dist /app/static
 
 # Copy run script
 COPY rootfs/ /
-
 RUN chmod a+x /run.sh
 
 # Health check
