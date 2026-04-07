@@ -6,35 +6,31 @@ RUN npm install
 COPY frontend/ .
 RUN npm run build
 
-# ---------- Stage 2: runtime ----------
-FROM python:3.11-slim-bookworm
+# ---------- Stage 2: install Python deps ----------
+FROM python:3.11-slim-bookworm AS pip-build
 
-ENV DEBIAN_FRONTEND=noninteractive
-
-# Install system deps for OpenCV / DeepFace + bashio for HA integration
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    cmake \
-    gfortran \
-    libopenblas-dev \
-    liblapack-dev \
-    libffi-dev \
-    libjpeg62-turbo-dev \
-    zlib1g-dev \
-    libpng-dev \
-    libtiff-dev \
-    libfreetype6-dev \
-    libwebp-dev \
-    libhdf5-dev \
-    curl \
-    jq \
+    build-essential cmake gfortran \
+    libopenblas-dev liblapack-dev libhdf5-dev \
+    libjpeg62-turbo-dev zlib1g-dev libpng-dev \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
+COPY backend/requirements.txt /tmp/
+RUN pip install --no-cache-dir --prefix=/install -r /tmp/requirements.txt
 
-# Install Python deps
-COPY backend/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# ---------- Stage 3: runtime (slim) ----------
+FROM python:3.11-slim-bookworm
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libopenblas0 liblapack3 libhdf5-103-1 \
+    libjpeg62-turbo zlib1g libpng16-16 libgl1 libglib2.0-0 \
+    curl jq \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy installed Python packages from build stage
+COPY --from=pip-build /install /usr/local
+
+WORKDIR /app
 
 # Copy backend code
 COPY backend/ .
@@ -46,7 +42,6 @@ COPY --from=frontend-build /build/dist /app/static
 COPY rootfs/ /
 RUN chmod a+x /run.sh
 
-# Health check
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
     CMD curl -f http://localhost:8099/health || exit 1
 
