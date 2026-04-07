@@ -1,0 +1,22 @@
+name: DeepFace Recognition
+description: Face recognition tool - upload images and find unique persons
+version: 0.1.0
+slug: deepface
+url: https://github.com/serengil/deepface
+arch:
+  - amd64
+  - aarch64
+startup: services
+boot: auto
+init: false
+ingress: true
+ingress_port: 8099
+panel_icon: mdi:face-recognition
+panel_title: DeepFace
+map:
+  - type: data
+    read_only: false
+ports:
+  8099/tcp: null
+options: {}
+schema: {}

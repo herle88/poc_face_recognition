@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:github.com)",
+      "Bash(grep -l \"tailadmin.com\\\\|TailAdmin Free\\\\|TailAdmin React\" /Users/hernan/workspace/*/*.md)",
+      "WebFetch(domain:wellsr.com)",
+      "Bash(python3 -c \"import deepface; print\\(deepface.__version__\\)\")",
+      "Bash(pip3 --version)",
+      "Bash(pyenv versions:*)",
+      "Read(//Library/Frameworks/Python.framework/Versions/**)",
+      "Read(//usr/local/bin/**)",
+      "Read(//opt/homebrew/bin/**)",
+      "Bash(npm install:*)"
+    ]
+  }
+}
