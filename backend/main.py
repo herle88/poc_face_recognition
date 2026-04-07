@@ -1,10 +1,9 @@
 import os
 from contextlib import asynccontextmanager
-from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from database import init_db, UPLOADS_DIR
@@ -41,10 +40,15 @@ async def health():
 
 # Serve built frontend if it exists (production / add-on mode)
 if os.path.isdir(STATIC_DIR):
-    app.mount("/assets", StaticFiles(directory=os.path.join(STATIC_DIR, "assets")), name="static-assets")
 
+    @app.get("/")
+    async def serve_index():
+        return FileResponse(os.path.join(STATIC_DIR, "index.html"))
+
+    # Serve any static file, fallback to index.html for SPA routes
     @app.get("/{full_path:path}")
-    async def serve_frontend(request: Request, full_path: str):
-        # Serve index.html for all non-API, non-asset routes (SPA fallback)
-        index = os.path.join(STATIC_DIR, "index.html")
-        return FileResponse(index)
+    async def serve_static_or_fallback(full_path: str):
+        file_path = os.path.join(STATIC_DIR, full_path)
+        if os.path.isfile(file_path):
+            return FileResponse(file_path)
+        return FileResponse(os.path.join(STATIC_DIR, "index.html"))
