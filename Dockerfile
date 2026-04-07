@@ -1,4 +1,4 @@
-ARG BUILD_FROM=ghcr.io/home-assistant/amd64-base-python:3.11-alpine3.19
+ARG BUILD_FROM=ghcr.io/home-assistant/amd64-base:3.19
 # ---------- Stage 1: build frontend ----------
 FROM node:20-alpine AS frontend-build
 WORKDIR /build
@@ -10,8 +10,11 @@ RUN npm run build
 # ---------- Stage 2: runtime ----------
 FROM ${BUILD_FROM}
 
-# Install system deps for OpenCV and building Python packages
+# Install Python 3.11 and system deps for OpenCV / building packages
 RUN apk add --no-cache \
+    python3 \
+    py3-pip \
+    python3-dev \
     build-base \
     cmake \
     gfortran \
@@ -31,7 +34,7 @@ WORKDIR /app
 
 # Install Python deps
 COPY backend/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip3 install --no-cache-dir --break-system-packages -r requirements.txt
 
 # Copy backend code
 COPY backend/ .
