@@ -1,4 +1,4 @@
-ARG BUILD_FROM=ghcr.io/home-assistant/amd64-base:3.19
+ARG BUILD_FROM=ghcr.io/home-assistant/amd64-base-debian:bookworm
 # ---------- Stage 1: build frontend ----------
 FROM node:20-alpine AS frontend-build
 WORKDIR /build
@@ -10,25 +10,28 @@ RUN npm run build
 # ---------- Stage 2: runtime ----------
 FROM ${BUILD_FROM}
 
-# Install Python 3.11 and system deps for OpenCV / building packages
-RUN apk add --no-cache \
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install Python 3.11 and system deps for OpenCV / DeepFace
+RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
-    py3-pip \
+    python3-pip \
     python3-dev \
-    build-base \
+    build-essential \
     cmake \
     gfortran \
-    openblas-dev \
+    libopenblas-dev \
+    liblapack-dev \
     libffi-dev \
-    jpeg-dev \
-    zlib-dev \
+    libjpeg62-turbo-dev \
+    zlib1g-dev \
     libpng-dev \
-    tiff-dev \
-    freetype-dev \
-    lcms2-dev \
+    libtiff-dev \
+    libfreetype6-dev \
     libwebp-dev \
-    hdf5-dev \
-    curl
+    libhdf5-dev \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
